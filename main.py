@@ -27,6 +27,8 @@ PROFILE_DIR = "Profile 1"
 TEN = ["Nam", "Hung", "Dung", "Minh", "Tuan", "Thang", "Dat", "Hieu", "Trung", "Thanh", "Binh", "Son", "Phuc", "Lam", "Linh", "Trang", "Mai", "Hoa", "Lan", "Huong", "Vy", "Ngan", "Kiet", "Long", "Quan", "Khoi", "Ha", "Thao"]
 HO = ["Nguyen", "Tran", "Le", "Pham", "Hoang", "Huynh", "Phan", "Vu", "Vo", "Dang", "Bui", "Do", "Ho", "Ngo", "Duong", "Ly"]
 DEM = ["Van", "Thi", "Minh", "Huu", "Duc", "Dinh", "Xuan", "Ngoc", "Quang", "Tuan", "Thanh", "Hai", "Khanh", "Hoai"]
+NICK_PREFIX = ["be", "mr", "ms", "iam", "im", "thay", "cau", "anh", "chi"]
+NICK_SUFFIX = ["cute", "vip", "pro", "kun", "ka", "zz", "xx", "baby", "love"]
 
 class GametyAutoReg:
     def __init__(self):
@@ -34,55 +36,33 @@ class GametyAutoReg:
         self.total_runs = 0
         self.success_count = 0
         
-        # Tắt log rác của ddddocr
-        try:
-            self.ocr = ddddocr.DdddOcr(show_ad=False)
-        except:
-            self.ocr = ddddocr.DdddOcr()
+        try: self.ocr = ddddocr.DdddOcr(show_ad=False)
+        except: self.ocr = ddddocr.DdddOcr()
         
         if not os.path.exists(ACCOUNT_FILE):
             with open(ACCOUNT_FILE, "w") as f: pass
             
-        if os.path.exists(CHROME_PATH_1):
-            self.chrome_exe = CHROME_PATH_1
-        elif os.path.exists(CHROME_PATH_2):
-            self.chrome_exe = CHROME_PATH_2
-        else:
-            self.chrome_exe = None
+        if os.path.exists(CHROME_PATH_1): self.chrome_exe = CHROME_PATH_1
+        elif os.path.exists(CHROME_PATH_2): self.chrome_exe = CHROME_PATH_2
+        else: self.chrome_exe = None
 
-    # --- HÀM ĐẾM NGƯỢC ĐẸP MẮT ---
+    # --- UI & LOG ---
     def countdown_timer(self, seconds):
         while seconds > 0:
             m, s = divmod(seconds, 60)
-            timer = '{:02d}:{:02d}'.format(m, s)
-            sys.stdout.write(f"\r💤 Đang nghỉ ngơi: {timer} (Chờ lượt tiếp theo)   ")
+            sys.stdout.write(f"\r💤 Đang nghỉ: {m:02d}:{s:02d} (Chờ lượt tiếp theo)     ")
             sys.stdout.flush()
             time.sleep(1)
             seconds -= 1
-        sys.stdout.write("\r" + " " * 50 + "\r") # Xóa dòng đếm ngược
+        sys.stdout.write("\r" + " " * 60 + "\r") 
 
     def log(self, msg, type="info"):
-        # Format thống kê: [5/10] Nội dung
         stats = f"[{self.success_count}/{self.total_runs}]"
-        if type == "success":
-            print(f"✅ {stats} {msg}")
-        elif type == "error":
-            print(f"❌ {stats} {msg}")
-        elif type == "warning":
-            print(f"⚠️ {stats} {msg}")
-        else:
-            # Info thường không cần in ra để sạch màn hình, hoặc in màu xám
-            pass 
+        if type == "success": print(f"✅ {stats} {msg}")
+        elif type == "error": print(f"❌ {stats} {msg}")
+        elif type == "warning": print(f"⚠️ {stats} {msg}")
 
-    def wait_for_internet(self):
-        for _ in range(20): 
-            try:
-                subprocess.check_call(["ping", "-n", "1", "8.8.8.8"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                return True
-            except:
-                time.sleep(1)
-        return False
-
+    # --- HỆ THỐNG ---
     def close_chrome(self):
         try:
             subprocess.run("taskkill /F /IM chrome.exe /T", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
@@ -91,7 +71,6 @@ class GametyAutoReg:
     def open_chrome(self):
         if not self.chrome_exe: return False
         try:
-            # THÊM --headless=new ĐỂ CHẠY ẨN
             cmd = f'"{self.chrome_exe}" --headless=new --remote-debugging-port=9222 --user-data-dir="{USER_DATA_DIR}" --profile-directory="{PROFILE_DIR}"'
             subprocess.Popen(cmd, shell=True)
             time.sleep(3) 
@@ -108,8 +87,7 @@ class GametyAutoReg:
         except: self.page = None
 
     def rotate_ip_mobile(self):
-        # Chỉ in 1 dòng thông báo nhỏ
-        sys.stdout.write(f"📱 [{self.success_count}/{self.total_runs + 1}] Đang đổi IP... ")
+        sys.stdout.write(f"📱 [{self.success_count}/{self.total_runs + 1}] Đổi IP... ")
         sys.stdout.flush()
         try:
             d = u2.connect()
@@ -119,40 +97,36 @@ class GametyAutoReg:
             if d(textContains="Bật").exists: d(textContains="Bật").click()
             elif d(textContains="máy bay").exists: d(textContains="máy bay").click()
             
-            if self.wait_for_internet():
-                print("-> OK")
-            else:
-                print("-> Mất mạng!")
+            for _ in range(20):
+                try:
+                    subprocess.check_call(["ping", "-n", "1", "8.8.8.8"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    print("-> OK")
+                    return
+                except: time.sleep(1)
+            print("-> Mất mạng!")
         except: 
-            print("-> Lỗi kết nối ĐT")
+            print("-> Lỗi ĐT")
 
     def generate_natural_profile(self):
         ho = random.choice(HO)
         dem = random.choice(DEM)
         ten = random.choice(TEN)
         
-        style = random.choice([1, 2, 3])
-        if style == 1: 
-            # hungnguyen98
-            raw_name = f"{ten}{ho}{random.randint(90, 99)}"
-        elif style == 2: 
-            # nguyenvanhung2001
-            raw_name = f"{ho}{dem}{ten}{random.randint(2000, 2005)}"
-        else: 
-            # tuanminhvn
-            raw_name = f"{ten}{dem}vn{random.randint(1,99)}"
+        style = random.choice([1, 2, 3, 4, 5])
+        if style == 1: raw_name = f"{ho}{dem}{ten}"
+        elif style == 2:
+            if random.choice([True, False]): raw_name = f"{random.choice(NICK_PREFIX)}{ten}"
+            else: raw_name = f"{ten}{random.choice(NICK_SUFFIX)}"
+        elif style == 3: raw_name = f"{ten}{random.randint(1995, 2005)}"
+        elif style == 4: raw_name = f"{ten}{ho}{random.randint(1, 999)}"
+        else: raw_name = f"{ten}{ten}"
 
-        # CHUYỂN TOÀN BỘ VỀ CHỮ THƯỜNG -> NHÌN KHÔNG CÔNG NGHIỆP
         username = raw_name.lower()
-
-        if random.choice([True, False]): 
-            email_user = f"{ten}.{ho}{random.randint(10,999)}".lower()
-        else: 
-            email_user = username
+        if random.choice([True, False]): email_user = f"{ten}{ho}{random.randint(10,999)}".lower()
+        else: email_user = username
             
         email = f"{email_user}@gmail.com"
         pwd = "Aa1" + ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(9))
-        
         return username, email, pwd
 
     def giai_captcha(self, img_bytes):
@@ -164,8 +138,7 @@ class GametyAutoReg:
         except: return None
 
     def check_ip_limit(self):
-        error_msg = "There has already been registration from this IP address"
-        if self.page.ele(f'text:{error_msg}', timeout=3):
+        if self.page.ele('text:There has already been registration', timeout=3):
             return True
         return False
 
@@ -181,18 +154,18 @@ class GametyAutoReg:
     def save_account(self, username, password, email):
         with open(ACCOUNT_FILE, "a") as f:
             f.write(f"{username}|{password}|{email}\n")
-        self.success_count += 1 # Tăng biến đếm thành công
-        self.log(f"TẠO THÀNH CÔNG: {username}", "success")
+        self.success_count += 1
+        self.log(f"THÀNH CÔNG: {username}", "success")
 
+    # --- TRẢ VỀ TRUE/FALSE ĐỂ BIẾT CÓ CẦN RETRY KHÔNG ---
     def run_cycle(self):
         self.total_runs += 1
-        
         self.close_chrome()
         self.rotate_ip_mobile()
         
-        if not self.open_chrome(): return
+        if not self.open_chrome(): return False
         self.connect_browser()
-        if not self.page: return
+        if not self.page: return False
 
         try:
             try: self.page.run_cdp('Network.clearBrowserCookies')
@@ -204,10 +177,10 @@ class GametyAutoReg:
                 self.page.ele('text:Create an account').click()
             
             if not self.page.wait.ele_displayed('xpath:/html/body/div/div[2]/div[2]/div/form/div[1]/input', timeout=10):
-                self.log("Không thấy Form đăng ký", "warning")
-                return
+                self.log("Lỗi load Form", "warning")
+                return False # Lỗi -> Trả về False
             
-            user, email, pwd = self.generate_profile()
+            user, email, pwd = self.generate_natural_profile()
             
             self.page.ele('xpath:/html/body/div/div[2]/div[2]/div/form/div[1]/input').input(user)
             self.page.ele('xpath:/html/body/div/div[2]/div[2]/div/form/div[2]/input').input(email)
@@ -241,53 +214,57 @@ class GametyAutoReg:
 
                 time.sleep(2)
                 
-                # Check IP Limit
                 if self.check_ip_limit():
-                    self.log("LỖI: Trùng IP (Limit Reached)", "error")
-                    return 
+                    self.log("Trùng IP (Limit Reached)", "error")
+                    return False # Lỗi IP -> Trả về False để retry ngay
 
-                # Check Popup
                 alert_text = self.page.handle_alert(timeout=3)
                 if alert_text:
                     self.log(f"Lỗi Web: {alert_text}", "error")
-                    return 
+                    return False # Lỗi Popup -> Trả về False
 
-                # Đợi load thành công
                 time.sleep(8) 
                 
-                # Click nút phụ (nếu có) - chạy ngầm
+                # Click nút phụ ngầm
                 try:
                     if self.page.ele('xpath:/html/body/div/div[3]/div[2]/div[3]/form/button', timeout=3):
                         self.page.ele('xpath:/html/body/div/div[3]/div[2]/div[3]/form/button').click()
                         time.sleep(1)
                 except: pass
-
+                
                 try:
-                    self.page.scroll.to_bottom()
-                    time.sleep(1) 
+                    self.page.scroll.to_bottom() 
                     if self.page.ele('xpath:/html/body/div/div[3]/div[13]/div[4]/form/button', timeout=3):
                         self.page.ele('xpath:/html/body/div/div[3]/div[13]/div[4]/form/button').click()
                 except: pass
 
                 self.save_account(user, pwd, email)
+                return True # THÀNH CÔNG -> Trả về True
             else:
-                self.log("Giải Captcha thất bại", "warning")
+                self.log("Lỗi Captcha", "warning")
+                return False # Lỗi Captcha -> Trả về False
 
         except Exception as e:
-            self.log(f"Lỗi Runtime: {e}", "error")
+            return False # Lỗi Runtime -> Trả về False
         finally:
             self.close_chrome()
 
 if __name__ == "__main__":
+    os.system('cls' if os.name == 'nt' else 'clear')
     print("=========================================")
-    print("🚀 TOOL REG GAMETY - AUTO PRO MAX")
+    print("   GAMETY REG TOOL - FINAL V4 (RETRY)    ")
     print("=========================================")
     
     bot = GametyAutoReg()
     
     while True:
-        bot.run_cycle()
+        # Chạy và lấy kết quả (True/False)
+        is_success = bot.run_cycle()
         
-        # Random thời gian nghỉ từ 60 đến 320 giây
-        delay = random.randint(60, 320)
-        bot.countdown_timer(delay)
+        if is_success:
+            # Nếu thành công -> Nghỉ ngơi
+            delay = random.randint(60, 155)
+            bot.countdown_timer(delay)
+        else:
+            # Nếu thất bại (False) -> In thông báo và chạy lại ngay (Bỏ qua delay)
+            print("⚠️ Gặp lỗi -> Thử lại ngay lập tức (Skip delay)...")
